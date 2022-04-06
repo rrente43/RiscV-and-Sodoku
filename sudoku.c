@@ -1,45 +1,36 @@
 #include <stdio.h>
-
-extern int trycell(int*, int);
-
-void show(int *x)
+extern unsigned long returnsp();
+int trycell(int *x, int pos)
 {
-    int i, j;
-    for (i = 0; i < 9; i++) {
-        if (!(i % 3)) putchar('\n');
-        for (j = 0; j < 9; j++)
-            printf(j % 3 ? "%2d" : "%3d", *x++);
-        putchar('\n');
-    }
-}
+    int row = pos / 9;
+    int col = pos % 9;
+    int i, j, used = 0;
+    unsigned long sp;
+    sp = (unsigned long)returnsp();
 
-void solve(const char *s)
-{
-    int i, x[81];
-    for (i = 0; i < 81; i++)
-        x[i] = s[i] >= '1' && s[i] <= '9' ? s[i] - '0' : 0;
+    printf("Entering Trycell, Stack pointer register sp:%#8x\n",sp);
 
-    puts("Puzzle to solve\n");
-    show(x);
-    if (trycell(x, 0)) {
-        puts("\nSolution:\n");
-        show(x);
-    }
-    else
-        puts("No solution\n");
-}
+    if (pos == 81) return 1;
+    if (x[pos]) return trycell(x, pos + 1);
 
-int main(void)
-{
-    solve(    "5...7...."
-        "6..195..."
-        ".98....6."
-        "8...6...3"
-        "4..8.3..1"
-        "7...2...6"
-        ".6....28."
-        "...419..5"
-        "....8..79"    );
+    for (i = 0; i < 9; i++)
+        used |= 1 << (x[i * 9 + col] - 1);
 
+    for (j = 0; j < 9; j++)
+        used |= 1 << (x[row * 9 + j] - 1);
+
+    row = row / 3 * 3;
+    col = col / 3 * 3;
+    for (i = row; i < row + 3; i++)
+        for (j = col; j < col + 3; j++)
+            used |= 1 << (x[i * 9 + j] - 1);
+
+    for (x[pos] = 1; x[pos] <= 9; x[pos]++, used >>= 1)
+        if (!(used & 1) && trycell(x, pos + 1)) return 1;
+
+    sp = (unsigned long)returnsp();
+    printf("Leaving Trycell, Stack pointer register sp:%#8x\n",sp);
+
+    x[pos] = 0;
     return 0;
 }
